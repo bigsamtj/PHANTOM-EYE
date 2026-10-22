@@ -1,0 +1,1248 @@
+# PHANTOM EYE — FULL APPLICATION UI AND INTERACTIVE PROTOTYPE
+
+## 1. PROJECT OBJECTIVE
+
+Build a polished, responsive, multi-page cybersecurity assessment web application called **PHANTOM EYE**.
+
+PHANTOM EYE is an AI-assisted security assessment and offensive-security workflow platform designed for authorized penetration testers, digital forensics analysts, cybersecurity engineers, red-team operators, and security assessment teams.
+
+The application must look and feel like a real professional security product, not a generic admin dashboard or static landing page.
+
+The interface must support the complete assessment lifecycle:
+
+1. Create an assessment.
+2. Enter a domain or approved target.
+3. Confirm authorization and define scope.
+4. Perform passive reconnaissance.
+5. Review discovered assets and technologies.
+6. Perform approved, non-destructive scanning and enumeration.
+7. Review, validate, and prioritize findings.
+8. Capture evidence and screenshots.
+9. Simulate controlled testing workflows.
+10. Generate professional reports.
+11. Export TXT, JSON, CSV, and PDF files.
+12. Review previous assessments and their audit history.
+
+Create the GUI first, but structure the application so a real Python CLI and authorized security-testing engine can be connected later.
+
+IMPORTANT: Do not make every page a static mockup. Navigation, tabs, filters, forms, terminal interactions, workflow progress, report previews, and buttons must work within the prototype.
+
+## 2. DESIGN LANGUAGE — STRICT LIGHT MODE
+
+Use a premium, modern, light-mode interface throughout the entire application.
+
+Never use a black or dark dashboard as the primary design.
+
+### Color palette
+
+- Main background: #F5F7FA
+- Primary surface: #FFFFFF
+- Secondary surface: #F8FAFC
+- Primary text: #172033
+- Secondary text: #64748B
+- Borders: #E2E8F0
+- Primary accent: #E32936
+- Accent hover: #C91E2B
+- Success: #059669
+- Warning: #D97706
+- Informational: #2563EB
+- Critical severity: #DC2626
+- Terminal background: #101827
+- Terminal foreground: #E5EDF7
+- Terminal success: #34D399
+- Terminal warning: #FBBF24
+
+The terminal is the only area that may use a dark surface, resembling a professional Kali Linux terminal. The rest of the application must remain light.
+
+### Typography
+
+Use Inter or Geist for interface text and JetBrains Mono for terminal output, hashes, IP addresses, commands, technical identifiers, and evidence metadata.
+
+### Visual style
+
+- Clean enterprise cybersecurity aesthetic.
+- Strong visual hierarchy.
+- Compact but readable information density.
+- Subtle borders and shadows.
+- Rounded cards, approximately 10–14px.
+- Crisp line icons.
+- Small status badges.
+- Consistent spacing.
+- Responsive desktop, tablet, and mobile layouts.
+- Minimal animations that communicate progress rather than decorate the screen.
+- Charts and tables must remain readable on light surfaces.
+
+Avoid excessive gradients, oversized headings, unnecessary illustrations, and excessive empty space.
+
+## 3. APPLICATION SHELL
+
+Create a persistent application layout.
+
+### Left sidebar
+
+Include the PHANTOM EYE logo, a red eye-inspired symbol, and these navigation sections:
+
+**WORKSPACE**
+- Overview
+- Assessments
+- New Assessment
+- Asset Inventory
+- Reconnaissance
+- Scan & Enumeration
+- Findings
+- Evidence Vault
+- Reports
+
+**OPERATIONS**
+- Terminal
+- Integrations
+- Assessment Templates
+- Scan History
+
+**ADMINISTRATION**
+- Team & Access
+- Audit Logs
+- Settings
+- Help & Documentation
+
+The sidebar must support collapsing and expanding.
+
+Highlight the active route. Use tooltips when collapsed. Keep the sidebar consistent across every page.
+
+### Top navigation bar
+
+Include:
+- Breadcrumb navigation.
+- Global search.
+- Notifications.
+- Running assessment indicator.
+- Environment indicator: Development / Lab / Authorized Production.
+- User profile menu.
+- Light-mode indicator.
+
+Display an authorization status badge, but never imply that a domain is authorized merely because the user entered it.
+
+### Global interactions
+
+- Sidebar navigation changes the displayed page.
+- Global search searches assessments, assets, and findings in sample data.
+- Notifications open a panel.
+- User profile opens a menu.
+- Running assessment indicator opens the current job.
+- Breadcrumbs navigate to parent pages.
+- Provide empty states, loading states, error states, and success notifications.
+
+## 4. PAGE ONE — OVERVIEW DASHBOARD
+
+Route: `/dashboard`
+
+Create a professional security operations overview.
+
+### Header
+
+Title: Security Assessment Overview
+
+Subtitle: Discover, assess, validate, and report on your authorized attack surface.
+
+Include:
+- New Assessment button.
+- View Reports button.
+- Date range selector.
+
+### Summary cards
+
+Display:
+- Total Assessments.
+- Assets Discovered.
+- Open Findings.
+- Critical Findings.
+- Assessments Running.
+- Reports Generated.
+
+Every card should contain a number, an explanatory label, and a comparison with the previous period where sample data supports it.
+
+### Main dashboard content
+
+Create:
+1. Assessment activity line chart.
+2. Findings severity donut chart.
+3. Assessment status breakdown.
+4. Recent assessments table.
+5. Recently discovered assets.
+6. Latest findings.
+7. Recent terminal jobs.
+8. Recent report exports.
+
+Use realistic but clearly labeled synthetic demonstration data.
+
+Do not represent sample results as real scans.
+
+## 5. PAGE TWO — NEW ASSESSMENT WIZARD
+
+Route: `/assessments/new`
+
+This is one of the most important pages.
+
+Build a multi-step assessment wizard with a visible progress indicator.
+
+### Step 1: Assessment details
+
+Fields:
+- Assessment name.
+- Target domain.
+- Optional target IP or CIDR.
+- Description.
+- Client or project reference.
+- Assessment type.
+- Environment.
+- Assigned analyst.
+- Assessment template.
+
+Assessment types:
+- Passive Reconnaissance.
+- External Attack Surface Assessment.
+- Web Security Baseline.
+- API Security Assessment.
+- Network Security Assessment.
+- Full Authorized Assessment.
+- Custom Assessment.
+
+Allow only valid, normalized target input. Reject malformed URLs, unsupported target types, and invalid scope definitions.
+
+### Step 2: Authorization and scope
+
+Include:
+- Authorization confirmation checkbox.
+- Authorization reference or ticket number.
+- Scope start date and expiration.
+- Allowed domains.
+- Allowed IP ranges.
+- Explicitly excluded hosts and networks.
+- Approved testing windows.
+- Maximum request rate.
+- Permitted testing categories.
+- Prohibited testing categories.
+
+The operator must explicitly confirm authorization before starting an assessment.
+
+For production testing, require scope review and an approved authorization record.
+
+Display a warning when the target is outside the configured scope.
+
+### Step 3: Assessment modules
+
+Allow module selection using cards and checkboxes.
+
+**Passive reconnaissance**
+- DNS record collection.
+- WHOIS/RDAP lookup through an approved integration.
+- Certificate transparency lookup.
+- Public subdomain discovery through approved sources.
+- Public technology intelligence.
+- Publicly indexed exposure indicators.
+
+**Non-destructive assessment**
+- HTTP security header review.
+- TLS certificate and configuration checks.
+- DNS configuration checks.
+- Approved low-intensity port scanning.
+- Service enumeration within scope.
+- API specification and endpoint inventory.
+- Dependency and configuration review.
+
+**Controlled validation**
+- Manual verification checklist.
+- Safe, non-destructive proof checks.
+- Evidence capture.
+- Finding validation workflow.
+
+**Reporting**
+- Executive summary.
+- Technical findings.
+- Evidence appendix.
+- Remediation plan.
+
+Intrusive exploitation, credential attacks, persistence, destructive testing, and payload delivery must be disabled by default and must not execute as a consequence of selecting a broad assessment template.
+
+### Step 4: Review and start
+
+Show a summary of:
+- Target.
+- Authorization.
+- Scope.
+- Exclusions.
+- Selected modules.
+- Request limits.
+- Testing window.
+- Report formats.
+
+Buttons:
+- Save Draft.
+- Previous.
+- Start Assessment.
+
+If authorization or scope validation fails, prevent execution and explain why.
+
+On successful prototype submission, create an assessment record and open the assessment workspace.
+
+## 6. PAGE THREE — ASSESSMENTS
+
+Route: `/assessments`
+
+Build a searchable assessment management table.
+
+Columns:
+- Assessment ID.
+- Assessment Name.
+- Target.
+- Assessment Type.
+- Status.
+- Progress.
+- Findings.
+- Assigned Analyst.
+- Created Date.
+- Last Updated.
+- Actions.
+
+Statuses:
+- Draft.
+- Awaiting Authorization.
+- Ready.
+- Queued.
+- Running.
+- Paused.
+- Completed.
+- Failed.
+- Cancelled.
+
+Features:
+- Search.
+- Sort.
+- Filter by status.
+- Filter by assessment type.
+- Date filters.
+- Pagination.
+- Row selection.
+- Bulk export of metadata.
+- Open assessment.
+- Duplicate configuration.
+- Archive assessment.
+
+Never duplicate a real scan merely because a user duplicates an assessment configuration.
+
+## 7. PAGE FOUR — ASSESSMENT WORKSPACE
+
+Route: `/assessments/:id`
+
+Create a detailed workspace for each assessment.
+
+Header:
+- Assessment name.
+- Target domain.
+- Status badge.
+- Authorization status.
+- Start and finish timestamps.
+- Pause, resume, or cancel controls where supported.
+
+Tabs:
+1. Summary.
+2. Scope.
+3. Reconnaissance.
+4. Scanning.
+5. Findings.
+6. Evidence.
+7. Timeline.
+8. Terminal.
+9. Reports.
+10. Activity Log.
+
+### Summary tab
+
+Show:
+- Workflow progress.
+- Modules completed.
+- Modules pending.
+- Discovered assets.
+- Open findings by severity.
+- Latest activity.
+- Next recommended action.
+
+### Workflow tracker
+
+Show these stages:
+
+01 — Authorization & Scope  
+02 — Reconnaissance  
+03 — Asset Discovery  
+04 — Scanning & Enumeration  
+05 — Finding Validation  
+06 — Evidence Review  
+07 — Report Generation
+
+Each stage must show:
+- Status.
+- Start time.
+- Completion time.
+- Duration.
+- Number of observations.
+- View details action.
+
+Progress must reflect actual prototype job state, not a decorative percentage.
+
+## 8. PAGE FIVE — RECONNAISSANCE
+
+Route: `/recon`
+
+Build a reconnaissance interface with target information and discovery results.
+
+### Overview metrics
+
+- Domains.
+- Subdomains.
+- IP addresses.
+- DNS records.
+- Certificate records.
+- Technology indicators.
+- Public exposure observations.
+
+### Reconnaissance modules
+
+Each module needs:
+- Description.
+- Source.
+- Status.
+- Last executed time.
+- Result count.
+- Run or View Results action.
+- Error and rate-limit states.
+
+Modules:
+- DNS Lookup.
+- WHOIS/RDAP.
+- Certificate Transparency.
+- Passive Subdomain Discovery.
+- Public Technology Fingerprinting.
+- HTTP Metadata.
+- Public Exposure Review.
+
+### Results layout
+
+Use tabs:
+- Overview.
+- Domains & Subdomains.
+- DNS Records.
+- IP Addresses.
+- Certificates.
+- Technologies.
+- Sources & References.
+
+Subdomain table columns:
+- Hostname.
+- Source.
+- IP Address.
+- First Seen.
+- Last Seen.
+- Scope Status.
+- Verification Status.
+
+Scope status values:
+- In Scope.
+- Out of Scope.
+- Needs Review.
+
+Provide an interactive relationship graph linking the root domain, subdomains, IPs, and certificate observations.
+
+Clearly distinguish live-collected results, imported data, and synthetic sample data.
+
+## 9. PAGE SIX — SCANNING & ENUMERATION
+
+Route: `/scanning`
+
+Build a controlled scan configuration and job-monitoring page.
+
+### Scan modules
+
+- Approved TCP Port Scan.
+- Service Enumeration.
+- HTTP Security Headers.
+- TLS Assessment.
+- DNS Configuration Review.
+- Web Technology Identification.
+- API Inventory.
+- Configuration Review.
+
+### Scan configuration panel
+
+Include:
+- Target selection from approved scope.
+- Scan profile.
+- Allowed port selection.
+- Request rate.
+- Timeout.
+- Retry limit.
+- Excluded targets.
+- Scan window.
+- Maximum runtime.
+- Safe mode indicator.
+
+Profiles:
+- Passive.
+- Low Impact.
+- Standard Authorized.
+- Custom.
+
+Default to Passive or Low Impact.
+
+Show a scope-validation summary before execution.
+
+### Job table
+
+Columns:
+- Job ID.
+- Module.
+- Target.
+- Status.
+- Progress.
+- Start Time.
+- Duration.
+- Results.
+- Actions.
+
+Support:
+- View Job.
+- Pause when the backend supports it.
+- Cancel.
+- Retry failed job after reviewing the cause.
+- View output.
+- Open terminal session.
+
+Use a real job queue abstraction in the application architecture. For a frontend-only prototype, simulate jobs using deterministic sample events and label them “Simulation.”
+
+## 10. PAGE SEVEN — TERMINAL SIMULATOR
+
+Route: `/terminal`
+
+This page is essential. Make it feel like a polished Kali Linux command-line workspace embedded inside the application.
+
+The terminal should be dark while the surrounding interface stays light.
+
+### Terminal layout
+
+Header:
+- Session name.
+- Assessment ID.
+- Approved target.
+- Scope status.
+- Connected / Simulated / Disconnected badge.
+- Clear Screen button.
+- Export Output button.
+
+Main panel:
+- Terminal output.
+- Monospaced font.
+- Command prompt.
+- Scrollable output history.
+- Timestamped activity.
+- Command history.
+- Copy output action.
+- Search output.
+- Stop Simulation button.
+
+Side panel:
+- Available tools.
+- Selected target.
+- Active module.
+- Scope constraints.
+- Job status.
+- Recent output files.
+
+### Terminal simulation
+
+The prototype must support a working simulated command interface.
+
+Example:
+
+`phantom-eye example.com`
+
+Show a command sequence such as:
+
+`[PHANTOM EYE] Initializing assessment workspace...`
+
+`[INFO] Target: example.com`
+
+`[INFO] Loading authorization and scope policy...`
+
+`[INFO] Authorization state: DEMONSTRATION MODE`
+
+`[INFO] Passive DNS module initialized`
+
+`[INFO] HTTP metadata module initialized`
+
+`[INFO] TLS verification module initialized`
+
+`[INFO] Collecting approved observations...`
+
+`[INFO] Building findings and evidence references...`
+
+`[INFO] Generating report...`
+
+`[SUCCESS] Assessment simulation completed`
+
+`[OUTPUT] reports/example.com_report.txt`
+
+The sequence must appear progressively, like a real terminal, with timestamps, progress indicators, and colored status levels.
+
+### Terminal commands supported by the prototype
+
+Implement a simple command parser for these safe commands:
+
+- `help`
+- `clear`
+- `status`
+- `scope`
+- `tools`
+- `history`
+- `reports`
+- `phantom-eye example.com`
+- `phantom-eye example.com --passive`
+- `phantom-eye example.com --simulate`
+- `export txt`
+- `export json`
+
+The terminal must support basic command history using the up/down arrow keys, autocomplete for supported commands, copy output, and scroll-to-bottom behavior.
+
+Unknown commands should return a helpful error instead of silently succeeding.
+
+### Important execution rules
+
+The terminal simulator must not pretend that real Nmap, WHOIS, DNS, or vulnerability scans have been performed.
+
+In simulation mode:
+- Generate deterministic synthetic data.
+- Display a visible SIMULATION badge.
+- Never make network requests.
+- Never claim real findings were discovered.
+- Allow sample reports to be exported.
+
+In live mode:
+- Invoke only a configured backend job runner.
+- Validate the target against approved scope server-side.
+- Execute only allowlisted commands and modules.
+- Never pass arbitrary user input directly to a shell.
+- Capture stdout, stderr, exit code, timestamps, and execution metadata.
+- Apply timeouts, rate limits, and cancellation.
+- Do not run arbitrary shell commands through the browser.
+
+The terminal should look realistic without pretending to be an actual Kali shell when it is only a frontend simulation.
+
+## 11. PAGE EIGHT — FINDINGS
+
+Route: `/findings`
+
+Build a finding-management interface.
+
+### Severity levels
+
+- Critical.
+- High.
+- Medium.
+- Low.
+- Informational.
+- Needs Validation.
+
+### Findings table
+
+Columns:
+- Finding ID.
+- Title.
+- Severity.
+- Target Asset.
+- Category.
+- Confidence.
+- Validation Status.
+- First Observed.
+- Assigned Analyst.
+- Actions.
+
+Filters:
+- Severity.
+- Category.
+- Asset.
+- Validation status.
+- Assessment.
+- Date range.
+
+### Finding details drawer or page
+
+Display:
+- Finding title.
+- Severity.
+- Confidence.
+- Status.
+- Description.
+- Affected assets.
+- Evidence references.
+- Reproduction notes.
+- Impact.
+- Remediation.
+- References.
+- Analyst notes.
+- Validation history.
+- Related findings.
+- Audit history.
+
+Add CVSS fields only when appropriate and make the scoring methodology explicit.
+
+Do not fabricate CVE identifiers, CVSS scores, proof of exploitation, or affected versions.
+
+Provide states:
+- Open.
+- Under Review.
+- Confirmed.
+- False Positive.
+- Accepted Risk.
+- Resolved.
+
+## 12. PAGE NINE — ASSET INVENTORY
+
+Route: `/assets`
+
+Create an asset inventory covering:
+- Domains.
+- Subdomains.
+- IP addresses.
+- Hosts.
+- Web applications.
+- API endpoints.
+- Certificates.
+- Services.
+- Technologies.
+
+Asset detail page:
+- Asset identifier.
+- Hostname or address.
+- Asset type.
+- Scope status.
+- Discovery source.
+- Related assessments.
+- Related findings.
+- First and last observed.
+- Evidence references.
+- Notes.
+
+Use relationship links to navigate between associated assets.
+
+## 13. PAGE TEN — EVIDENCE VAULT
+
+Route: `/evidence`
+
+This is an evidence-oriented workspace suitable for professional security assessments and DFIR workflows.
+
+Evidence categories:
+- Screenshots.
+- HTTP metadata.
+- DNS records.
+- TLS certificate metadata.
+- Scan output.
+- Logs.
+- Imported files.
+- Analyst notes.
+- Report attachments.
+
+Table columns:
+- Evidence ID.
+- Name.
+- Type.
+- Source module.
+- Assessment.
+- SHA-256.
+- Collected At.
+- Collected By.
+- Integrity Status.
+
+Evidence detail page:
+- Preview where supported.
+- File metadata.
+- SHA-256 hash.
+- Collection timestamp in UTC.
+- Source.
+- Parent assessment.
+- Related asset.
+- Related finding.
+- Analyst notes.
+- Export option.
+
+Support adding screenshots to findings, attaching notes, and referencing evidence from reports.
+
+Use browser-generated screenshots or uploaded screenshots for the prototype. Label simulated evidence accurately.
+
+Never claim that an artifact has been cryptographically verified unless the hash has actually been calculated.
+
+## 14. PAGE ELEVEN — TIMELINE & ACTIVITY
+
+Route: `/timeline`
+
+Build a chronological activity timeline.
+
+Timeline events:
+- Assessment created.
+- Authorization confirmed.
+- Scope validated.
+- Module started.
+- Asset discovered.
+- Observation recorded.
+- Finding created.
+- Finding validated.
+- Evidence attached.
+- Report generated.
+- Export completed.
+- Assessment cancelled or completed.
+
+Each event should contain:
+- UTC timestamp.
+- Event type.
+- Actor.
+- Assessment ID.
+- Target.
+- Summary.
+- Related evidence.
+- Source module.
+
+Provide chronological sorting, filters, and an event-detail drawer.
+
+Use distinct visual styles for real backend events, imported events, and simulated demonstration events.
+
+## 15. PAGE TWELVE — REPORTS
+
+Route: `/reports`
+
+Create a professional report management page.
+
+### Report formats
+
+- TXT.
+- JSON.
+- CSV.
+- PDF.
+
+### Report templates
+
+- Executive Summary.
+- Technical Security Assessment.
+- Reconnaissance Report.
+- API Security Assessment.
+- Network Scan Report.
+- Evidence Appendix.
+- Remediation Plan.
+
+### Report table
+
+Columns:
+- Report ID.
+- Report Name.
+- Assessment.
+- Target.
+- Generated At.
+- Format.
+- Status.
+- Generated By.
+- Actions.
+
+### Report preview
+
+Include:
+- Cover page.
+- Report metadata.
+- Scope and authorization.
+- Executive summary.
+- Methodology.
+- Limitations.
+- Asset inventory.
+- Findings by severity.
+- Detailed findings.
+- Evidence references.
+- Recommendations.
+- Remediation priorities.
+- Appendix.
+- Analyst sign-off.
+
+The TXT report should be plain text, searchable, and suitable for command-line workflows.
+
+The PDF report should use clean typography, headers, page numbers, tables, and a restrained red-and-white visual identity.
+
+Export buttons must create actual downloadable files in the prototype when sample data is available.
+
+Do not populate reports with fabricated scan results without labeling them as synthetic.
+
+## 16. PAGE THIRTEEN — INTEGRATIONS
+
+Route: `/integrations`
+
+Build a tool and API integration directory.
+
+Tool cards:
+- Nmap.
+- DNS utilities.
+- WHOIS/RDAP provider.
+- Certificate Transparency provider.
+- HTTP/TLS analysis module.
+- Python assessment engine.
+- CyberChef.
+- Wireshark.
+- Burp Suite.
+- OWASP ZAP.
+- API specification importer.
+- External vulnerability intelligence provider.
+
+Each card should show:
+- Logo or icon.
+- Tool name.
+- Purpose.
+- Integration status.
+- Version where available.
+- Configuration button.
+- Documentation link.
+- Last health check.
+
+Statuses:
+- Connected.
+- Not Configured.
+- Unavailable.
+- Authentication Required.
+- Simulation Only.
+
+Never claim a tool is connected merely because its card exists.
+
+Build configuration forms for API base URLs, authentication references, timeouts, and rate limits. Keep secrets in a secure backend secret store, not frontend code or browser local storage.
+
+## 17. PAGE FOURTEEN — ASSESSMENT TEMPLATES
+
+Route: `/templates`
+
+Create reusable assessment templates.
+
+Default templates:
+- Passive Reconnaissance.
+- External Attack Surface.
+- Web Application Baseline.
+- API Security Baseline.
+- Network Exposure Review.
+- Security Configuration Review.
+- Custom.
+
+Each template includes:
+- Description.
+- Enabled modules.
+- Default limits.
+- Required permissions.
+- Excluded activities.
+- Report sections.
+- Estimated duration, if supported by actual historical data.
+
+Users can view, duplicate, edit, and save templates.
+
+## 18. PAGE FIFTEEN — SCAN HISTORY
+
+Route: `/scan-history`
+
+Create a complete job execution history.
+
+Include:
+- Job identifier.
+- Assessment.
+- Module.
+- Target.
+- Start time.
+- End time.
+- Duration.
+- Status.
+- Exit code.
+- Output size.
+- Error summary.
+- Retry history.
+
+Provide an output viewer for stdout and stderr, plus filters and export functionality.
+
+## 19. PAGE SIXTEEN — TEAM & ACCESS CONTROL
+
+Route: `/team`
+
+Roles:
+- Administrator.
+- Assessment Manager.
+- Security Analyst.
+- Reviewer.
+- Read-Only Auditor.
+
+Permissions should determine which actions users can perform.
+
+Include:
+- User directory.
+- Role assignment.
+- Invitation flow.
+- Account status.
+- Last active.
+- Access review.
+- Session management.
+
+For the prototype, demonstrate role-based UI behavior with sample users. In production, enforce all permissions on the backend.
+
+## 20. PAGE SEVENTEEN — AUDIT LOGS
+
+Route: `/audit-logs`
+
+Record significant actions:
+- Login and logout.
+- Assessment creation.
+- Authorization updates.
+- Scope modifications.
+- Job start, pause, cancellation, and completion.
+- Configuration changes.
+- Finding status changes.
+- Evidence uploads.
+- Report generation.
+- Report downloads.
+- User and role changes.
+
+Each audit event should contain:
+- UTC timestamp.
+- Actor.
+- Action.
+- Resource.
+- Result.
+- Correlation ID.
+- Metadata.
+
+Provide filters, search, and export.
+
+For production, audit records should be append-only or protected against unauthorized modification. The frontend prototype must not pretend its local sample audit log is tamper-proof.
+
+## 21. PAGE EIGHTEEN — SETTINGS
+
+Route: `/settings`
+
+Tabs:
+- General.
+- Appearance.
+- Assessment Defaults.
+- Scope Policies.
+- Terminal Preferences.
+- Report Branding.
+- Notifications.
+- API Configuration.
+- Security.
+- Data Retention.
+
+Include:
+- Logo upload.
+- Organization name.
+- Report footer.
+- Default report format.
+- Default timeout.
+- Default scan profile.
+- Terminal font size.
+- Notification preferences.
+- Data retention settings.
+
+The overall application must stay in light mode. The embedded terminal may remain dark independently.
+
+## 22. PAGE NINETEEN — HELP & DOCUMENTATION
+
+Route: `/help`
+
+Include:
+- Getting Started.
+- Authorization and Scope.
+- Assessment Workflow.
+- Reconnaissance.
+- Scan Profiles.
+- Terminal Commands.
+- Findings.
+- Evidence Handling.
+- Report Generation.
+- Integrations.
+- Troubleshooting.
+
+Add a searchable command reference for the simulated terminal.
+
+Include an explicit note that users must assess only targets they own or have permission to test.
+
+## 23. TECHNICAL STACK
+
+Use:
+- React.
+- TypeScript.
+- Vite or the framework supported by the selected coding environment.
+- Tailwind CSS.
+- shadcn/ui where available.
+- Lucide icons.
+- Recharts for charts.
+- React Router or an equivalent routing solution.
+- A typed service layer.
+- Zod or equivalent schema validation.
+- A reusable table component.
+- A reusable terminal component.
+
+Use React hooks correctly and avoid unnecessary global state.
+
+Organize the application into:
+- `components/`
+- `components/layout/`
+- `components/dashboard/`
+- `components/terminal/`
+- `components/assessments/`
+- `components/findings/`
+- `components/evidence/`
+- `pages/`
+- `routes/`
+- `services/`
+- `types/`
+- `schemas/`
+- `mock-data/`
+- `utils/`
+
+Use reusable components instead of duplicating page layouts.
+
+## 24. DATA MODEL
+
+Define typed models for:
+
+- User.
+- Role.
+- Assessment.
+- AuthorizationRecord.
+- ScopePolicy.
+- Target.
+- Asset.
+- ScanJob.
+- ScanModule.
+- Finding.
+- EvidenceItem.
+- TimelineEvent.
+- TerminalSession.
+- TerminalCommand.
+- Report.
+- Integration.
+- AuditEvent.
+- AssessmentTemplate.
+
+Every assessment and job should have a stable identifier.
+
+Every finding should link to an assessment and affected asset when known.
+
+Every evidence item should link to its source and relevant finding when applicable.
+
+Every simulated record should include a field such as:
+
+`executionMode: "simulation"`
+
+Use separate interfaces for API requests and responses.
+
+## 25. BACKEND INTEGRATION CONTRACT
+
+Prepare the frontend to connect to a Python FastAPI backend.
+
+Example endpoints:
+
+- `GET /api/health`
+- `GET /api/dashboard`
+- `GET /api/assessments`
+- `POST /api/assessments`
+- `GET /api/assessments/{id}`
+- `POST /api/assessments/{id}/authorize`
+- `POST /api/assessments/{id}/validate-scope`
+- `POST /api/assessments/{id}/jobs`
+- `GET /api/jobs/{id}`
+- `POST /api/jobs/{id}/cancel`
+- `GET /api/jobs/{id}/output`
+- `GET /api/assets`
+- `GET /api/findings`
+- `PATCH /api/findings/{id}`
+- `GET /api/evidence`
+- `POST /api/evidence`
+- `GET /api/reports`
+- `POST /api/reports`
+- `GET /api/reports/{id}/download`
+- `GET /api/audit-logs`
+- `GET /api/integrations`
+
+These are interface contracts, not proof that the endpoints already exist.
+
+Create typed API service functions and mock implementations.
+
+Add a configuration switch:
+- `DEMO_MODE=true`: use local deterministic data and simulated terminal jobs.
+- `DEMO_MODE=false`: use the configured backend.
+
+Never silently fall back from a failed real scan to fake results. Display a clear error and preserve the distinction between live and simulated data.
+
+## 26. REQUIRED DEMONSTRATION FLOW
+
+The completed prototype must support this walkthrough:
+
+1. Open the dashboard.
+2. Click New Assessment.
+3. Enter `example.com` as a demonstration target.
+4. Enter an authorization reference such as `DEMO-AUTH-001`.
+5. Explicitly select demonstration mode.
+6. Choose passive reconnaissance and HTTP/TLS baseline modules.
+7. Review the scope.
+8. Start the simulated assessment.
+9. Open the assessment workspace.
+10. View the simulated terminal output.
+11. View synthetic DNS, certificate, and HTTP metadata.
+12. Open a sample finding.
+13. View its evidence reference.
+14. Open the timeline.
+15. Generate a TXT report.
+16. Download the JSON data.
+17. Return to the dashboard and see the updated assessment count.
+
+All sample findings, asset records, and terminal output must be clearly marked as synthetic.
+
+## 27. ACCEPTANCE CRITERIA
+
+The project is complete only when:
+
+- All listed routes render.
+- Sidebar navigation works.
+- Light mode is consistent across all pages.
+- The terminal accepts supported commands.
+- Terminal output appears progressively.
+- Unknown terminal commands are handled.
+- Simulated jobs update their actual UI state.
+- Authorization and scope validation work in the prototype.
+- Tables can be searched and filtered.
+- Findings can be opened and updated in demo mode.
+- Evidence references can be viewed.
+- Timeline entries correspond to prototype actions.
+- TXT and JSON reports can actually be downloaded.
+- Loading, empty, error, and success states exist.
+- No button is purely decorative.
+- No real security activity is claimed when only simulation data is being used.
+- The application runs without missing imports, unresolved routes, or console errors.
+
+## 28. IMPLEMENTATION INSTRUCTIONS
+
+First build the complete functional UI using deterministic sample data.
+
+Do not stop after creating a landing page, a dashboard screenshot, or a handful of cards.
+
+Implement the shared layout, routing, all pages, terminal simulator, reusable components, typed models, demo data, and working report downloads.
+
+Make the application visually cohesive and realistic. Use synthetic data for the demonstration and clearly label it.
+
+After the interface is functional, prepare the service layer for integration with the Python CLI and FastAPI backend.
+
+Do not claim real reconnaissance, port scanning, vulnerability validation, exploitation, or evidence collection has occurred unless the connected backend actually performed that operation.
+
+Deliver:
+1. Complete source code.
+2. Project folder structure.
+3. Installation instructions.
+4. Run instructions.
+5. A working demo walkthrough.
+6. A list of implemented features.
+7. A list of backend features that remain to be integrated.
+
+Build PHANTOM EYE as a coherent, production-oriented security assessment interface, not merely a visual mockup.

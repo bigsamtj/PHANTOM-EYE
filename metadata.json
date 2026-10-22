@@ -1,0 +1,6 @@
+{
+  "name": "PHANTOM EYE — Security Assessment Platform",
+  "description": "AI-assisted cybersecurity assessment, offensive-security workflow, reconnaissance, and authorized penetration testing platform.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
