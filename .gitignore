@@ -1,8 +1,33 @@
-node_modules/
-build/
-dist/
-coverage/
+# Environment
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+
+# Reports
+reports/*.txt
+reports/*.html
+reports/*.json
+!reports/.gitkeep
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
 .DS_Store
-*.log
-.env*
-!.env.example
+Thumbs.db
+
+# Node (for later frontend)
+node_modules/
+dist/
+build/
