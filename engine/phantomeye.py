@@ -7,7 +7,37 @@ Author: Samuel Adeyinka (Big Sam)
 
 import argparse
 import sys
+import os
 from pathlib import Path
+
+# ======================
+# Load .env file automatically
+# ======================
+def load_env():
+    """Load environment variables from .env file"""
+    # Look for .env in project root (one level above engine/)
+    env_path = Path(__file__).resolve().parent.parent / ".env"
+    
+    if not env_path.exists():
+        # Also try current directory
+        env_path = Path(".env")
+    
+    if env_path.exists():
+        print(f"[*] Loading configuration from {env_path}")
+        with open(env_path, "r") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, value = line.split("=", 1)
+                key = key.strip()
+                value = value.strip().strip('"').strip("'")
+                os.environ[key] = value
+    else:
+        print("[!] .env file not found. Using default/empty values.")
+
+# Load environment before anything else
+load_env()
 
 # Add engine to path
 sys.path.insert(0, str(Path(__file__).parent))
