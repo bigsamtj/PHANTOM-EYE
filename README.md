@@ -1,3 +1,26 @@
+<p align="center">
+  <img src="assets/logo.png" alt="PHANTOM EYE Logo" width="180"/>
+</p>
+
+<h1 align="center">PHANTOM EYE</h1>
+
+<p align="center">
+  <b>Automated Security Assessment & Penetration Testing Platform</b>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/version-2.0.0-green" />
+  <img src="https://img.shields.io/badge/python-3.10+-blue" />
+  <img src="https://img.shields.io/badge/author-Big%20Sam-purple" />
+</p>
+
+---
+
+**PHANTOM EYE** is a hybrid automated penetration testing platform.
+
+You give it a domain → It runs full reconnaissance, scanning, vulnerability checks, and generates professional reports (with Telegram delivery).
+
+
 # PHANTOM EYE — Automated Security Assessment & Pen-Testing Platform
 
 **Version:** 1.0.0  
