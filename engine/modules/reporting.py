@@ -1,5 +1,6 @@
 """
-PHANTOM EYE - Reporting Module
+PHANTOM EYE - Advanced Reporting Module
+Supports TXT + HTML reports with logo
 """
 
 import json
@@ -11,22 +12,20 @@ from integrations.telegram import notify_complete
 
 
 def generate_text_report(target: Target, results: dict, findings: list) -> str:
-    """Generate a clean text report"""
     lines = []
     lines.append("=" * 70)
-    lines.append(f"PHANTOM EYE — Security Assessment Report")
+    lines.append("PHANTOM EYE — Security Assessment Report")
     lines.append(f"Version: {Config.VERSION}")
     lines.append("=" * 70)
-    lines.append(f"Target       : {target.domain}")
-    lines.append(f"IP Address   : {target.ip or 'N/A'}")
-    lines.append(f"Started      : {results.get('started_at', 'N/A')}")
-    lines.append(f"Finished     : {results.get('finished_at', 'N/A')}")
-    lines.append(f"Duration     : {results.get('duration', 'N/A')} seconds")
+    lines.append(f"Target        : {target.domain}")
+    lines.append(f"IP Address    : {target.ip or 'N/A'}")
+    lines.append(f"Started       : {results.get('started_at', 'N/A')}")
+    lines.append(f"Finished      : {results.get('finished_at', 'N/A')}")
+    lines.append(f"Duration      : {results.get('duration', 'N/A')} seconds")
     lines.append(f"Total Findings: {len(findings)}")
     lines.append("=" * 70)
     lines.append("")
 
-    # Group findings by severity
     severity_order = ["critical", "high", "medium", "low", "info"]
     grouped = {s: [] for s in severity_order}
 
@@ -61,12 +60,194 @@ def generate_text_report(target: Target, results: dict, findings: list) -> str:
     return "\n".join(lines)
 
 
-def save_report(content: str, target: Target, output_file: str = None) -> str:
-    """Save report to file"""
+def generate_html_report(target: Target, results: dict, findings: list) -> str:
+    severity_colors = {
+        "critical": "#ff2d55",
+        "high": "#ff3b30",
+        "medium": "#ff9500",
+        "low": "#ffcc00",
+        "info": "#64d2ff"
+    }
+
+    severity_order = ["critical", "high", "medium", "low", "info"]
+    grouped = {s: [] for s in severity_order}
+
+    for f in findings:
+        sev = f.get("severity", "info").lower()
+        if sev not in grouped:
+            sev = "info"
+        grouped[sev].append(f)
+
+    findings_html = ""
+    for sev in severity_order:
+        items = grouped[sev]
+        if not items:
+            continue
+
+        findings_html += f"""
+        <div class="severity-section">
+            <h2 style="color: {severity_colors[sev]}; border-bottom: 2px solid {severity_colors[sev]};">
+                {sev.upper()} — {len(items)} Finding(s)
+            </h2>
+        """
+
+        for item in items:
+            findings_html += f"""
+            <div class="finding-card">
+                <h3>{item.get('title', 'Untitled')}</h3>
+                <p><strong>Severity:</strong> <span class="badge" style="background:{severity_colors[sev]}">{sev.upper()}</span></p>
+                {"<p><strong>URL:</strong> <code>" + item.get('url', '') + "</code></p>" if item.get('url') else ""}
+                <p><strong>Description:</strong> {item.get('description', 'No description')}</p>
+                <p><strong>Module:</strong> {item.get('module', 'N/A')}</p>
+            </div>
+            """
+
+        findings_html += "</div>"
+
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHANTOM EYE Report - {target.domain}</title>
+    <style>
+        :root {{
+            --bg: #0b0f19;
+            --card: #141b2d;
+            --text: #e2e8f0;
+            --muted: #94a3b8;
+            --accent: #10b981;
+        }}
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 40px 20px;
+        }}
+        .container {{ max-width: 960px; margin: 0 auto; }}
+        .header {{
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid #1e293b;
+        }}
+        .logo {{
+            width: 120px;
+            margin-bottom: 20px;
+        }}
+        h1 {{
+            font-size: 2.2rem;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }}
+        .subtitle {{ color: var(--muted); font-size: 1.1rem; }}
+        .meta {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin: 30px 0;
+        }}
+        .meta-card {{
+            background: var(--card);
+            padding: 16px 20px;
+            border-radius: 12px;
+            border: 1px solid #1e293b;
+        }}
+        .meta-card span {{
+            display: block;
+            color: var(--muted);
+            font-size: 0.85rem;
+            margin-bottom: 4px;
+        }}
+        .meta-card strong {{
+            font-size: 1.1rem;
+            color: var(--accent);
+        }}
+        .finding-card {{
+            background: var(--card);
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }}
+        .finding-card h3 {{
+            margin-bottom: 12px;
+            color: #f1f5f9;
+        }}
+        .badge {{
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+        }}
+        code {{
+            background: #0f172a;
+            padding: 2px 7px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            color: #38bdf8;
+        }}
+        .footer {{
+            text-align: center;
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #1e293b;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="../../assets/logo.png" alt="PHANTOM EYE" class="logo" onerror="this.style.display='none'">
+            <h1>PHANTOM EYE</h1>
+            <p class="subtitle">Security Assessment Report</p>
+        </div>
+
+        <div class="meta">
+            <div class="meta-card">
+                <span>Target</span>
+                <strong>{target.domain}</strong>
+            </div>
+            <div class="meta-card">
+                <span>IP Address</span>
+                <strong>{target.ip or 'N/A'}</strong>
+            </div>
+            <div class="meta-card">
+                <span>Duration</span>
+                <strong>{results.get('duration', 'N/A')}s</strong>
+            </div>
+            <div class="meta-card">
+                <span>Total Findings</span>
+                <strong>{len(findings)}</strong>
+            </div>
+        </div>
+
+        {findings_html if findings_html else "<p style='text-align:center; color:#94a3b8;'>No findings detected.</p>"}
+
+        <div class="footer">
+            <p>Generated by <strong>PHANTOM EYE</strong> v{Config.VERSION}</p>
+            <p>Author: {Config.AUTHOR}</p>
+            <p>{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+    return html
+
+
+def save_report(content: str, target: Target, extension: str = "txt", output_file: str = None) -> str:
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = output_file or f"phantomeye_{target.domain}_{timestamp}.txt"
+    filename = output_file or f"phantomeye_{target.domain}_{timestamp}.{extension}"
     
     report_path = Config.REPORTS_PATH / filename
+    report_path.parent.mkdir(exist_ok=True)
 
     with open(report_path, "w", encoding="utf-8") as f:
         f.write(content)
@@ -75,8 +256,7 @@ def save_report(content: str, target: Target, output_file: str = None) -> str:
 
 
 def run(target: Target, results: dict = None, findings: list = None) -> dict:
-    """Generate and save the final report"""
-    print(f"{Config.Colors.CYAN}[*] Generating report...{Config.Colors.END}")
+    print(f"{Config.Colors.CYAN}[*] Generating reports...{Config.Colors.END}")
 
     results = results or {}
     findings = findings or []
@@ -87,7 +267,7 @@ def run(target: Target, results: dict = None, findings: list = None) -> dict:
         if isinstance(mod_data, dict) and "findings" in mod_data:
             all_findings.extend(mod_data["findings"])
 
-    # Remove duplicates (basic)
+    # Remove duplicates
     unique_findings = []
     seen = set()
     for f in all_findings:
@@ -96,23 +276,29 @@ def run(target: Target, results: dict = None, findings: list = None) -> dict:
             seen.add(key)
             unique_findings.append(f)
 
-    report_content = generate_text_report(target, results, unique_findings)
-    report_path = save_report(report_content, target)
+    # Generate both reports
+    txt_content = generate_text_report(target, results, unique_findings)
+    html_content = generate_html_report(target, results, unique_findings)
 
-    print(f"{Config.Colors.GREEN}[+] Report saved to: {report_path}{Config.Colors.END}")
+    txt_path = save_report(txt_content, target, "txt")
+    html_path = save_report(html_content, target, "html")
 
-    # Send to Telegram if configured
+    print(f"{Config.Colors.GREEN}[+] TXT Report  : {txt_path}{Config.Colors.END}")
+    print(f"{Config.Colors.GREEN}[+] HTML Report : {html_path}{Config.Colors.END}")
+
+    # Send to Telegram
     if Config.TELEGRAM_BOT_TOKEN and Config.TELEGRAM_CHAT_ID:
-        print(f"{Config.Colors.CYAN}[*] Sending report to Telegram...{Config.Colors.END}")
+        print(f"{Config.Colors.CYAN}[*] Sending reports to Telegram...{Config.Colors.END}")
         notify_complete(
             target=target.domain,
             findings_count=len(unique_findings),
             duration=results.get("duration", 0),
-            report_path=report_path
+            report_path=html_path
         )
 
     return {
-        "report_path": report_path,
+        "txt_report": txt_path,
+        "html_report": html_path,
         "findings_count": len(unique_findings),
         "findings": unique_findings
     }
