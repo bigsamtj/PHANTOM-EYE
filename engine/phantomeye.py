@@ -25,8 +25,8 @@ def print_banner():
 ██║     ██║  ██║██║  ██║██║ ╚████║   ██║   ╚██████╔╝██║ ╚═╝ ██║    ███████╗   ██║   ███████╗
 ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝   ╚═╝    ╚═════╝ ╚═╝     ╚═╝    ╚══════╝   ╚═╝   ╚══════╝
 {Config.Colors.END}
-{Config.Colors.CYAN}                    Automated Security Assessment Platform v{Config.VERSION}
-                    Author: {Config.AUTHOR}
+{Config.Colors.CYAN}          👁  Automated Security Assessment Platform  👁
+                    Version {Config.VERSION} | Author: {Config.AUTHOR}
 {Config.Colors.END}
 """
     print(banner)
