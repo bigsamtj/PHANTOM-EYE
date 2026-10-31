@@ -1,5 +1,5 @@
 """
-PHANTOM EYE - Telegram Integration
+PHANTOM EYE - Telegram Integration (Improved)
 """
 
 import requests
@@ -7,7 +7,6 @@ from core.config import Config
 
 
 def send_message(text: str, parse_mode: str = "HTML") -> bool:
-    """Send a text message to Telegram"""
     token = Config.TELEGRAM_BOT_TOKEN
     chat_id = Config.TELEGRAM_CHAT_ID
 
@@ -24,7 +23,7 @@ def send_message(text: str, parse_mode: str = "HTML") -> bool:
     }
 
     try:
-        response = requests.post(url, json=payload, timeout=10)
+        response = requests.post(url, json=payload, timeout=15)
         return response.status_code == 200
     except Exception as e:
         print(f"{Config.Colors.FAIL}[!] Telegram error: {e}{Config.Colors.END}")
@@ -32,7 +31,6 @@ def send_message(text: str, parse_mode: str = "HTML") -> bool:
 
 
 def send_document(file_path: str, caption: str = "") -> bool:
-    """Send a file (report) to Telegram"""
     token = Config.TELEGRAM_BOT_TOKEN
     chat_id = Config.TELEGRAM_CHAT_ID
 
@@ -46,9 +44,9 @@ def send_document(file_path: str, caption: str = "") -> bool:
             files = {"document": f}
             data = {
                 "chat_id": chat_id,
-                "caption": caption
+                "caption": caption[:1024] if caption else ""
             }
-            response = requests.post(url, data=data, files=files, timeout=30)
+            response = requests.post(url, data=data, files=files, timeout=60)
             return response.status_code == 200
     except Exception as e:
         print(f"{Config.Colors.FAIL}[!] Failed to send document: {e}{Config.Colors.END}")
@@ -56,26 +54,48 @@ def send_document(file_path: str, caption: str = "") -> bool:
 
 
 def notify_start(target: str):
-    """Notify that assessment has started"""
     message = f"""
 👁 <b>PHANTOM EYE</b> — Assessment Started
 
 🎯 <b>Target:</b> <code>{target}</code>
-⏱ Status: Running...
+📅 Status: <b>Running full pipeline...</b>
+
+Phases:
+• Reconnaissance
+• Scanning & Enumeration
+• Vulnerability Analysis
+• Reporting + Screenshots
+
+You will receive the full report when finished.
 """
     send_message(message.strip())
 
 
-def notify_complete(target: str, findings_count: int, duration: float, report_path: str = None):
-    """Notify that assessment is complete"""
+def notify_complete(target: str, findings_count: int, duration: float, report_path: str = None, extra_info: dict = None):
+    extra_info = extra_info or {}
+
+    open_ports = extra_info.get("open_ports", "N/A")
+    subdomains = extra_info.get("subdomains", "N/A")
+    high_findings = extra_info.get("high", 0)
+    medium_findings = extra_info.get("medium", 0)
+
     message = f"""
 ✅ <b>PHANTOM EYE</b> — Assessment Complete
 
 🎯 <b>Target:</b> <code>{target}</code>
-🔍 <b>Findings:</b> {findings_count}
 ⏱ <b>Duration:</b> {duration}s
+
+📊 <b>Summary</b>
+• Total Findings: <b>{findings_count}</b>
+• High Severity: <b>{high_findings}</b>
+• Medium Severity: <b>{medium_findings}</b>
+• Open Ports: {open_ports}
+• Subdomains: {subdomains}
+
+📁 Full HTML + TXT reports are attached.
 """
     send_message(message.strip())
 
     if report_path:
-        send_document(report_path, caption=f"Report for {target}")
+        caption = f"PHANTOM EYE Report — {target}"
+        send_document(report_path, caption=caption)
